@@ -13,22 +13,33 @@ main :: IO ()
 main = do
     putStrLn "test"
 
-data MyBool
-    = MyTrue -- 'MyTrue is a type with kind MyBool
-    | MyFalse -- 'MyFalse is a type with kind MyBool
+-- "Recent GHCs don't make a distinction between types and kinds
+-- any more, even if you don't activate any of the relevant extensions.
+-- In particular, we have Type :: Type, as you can see
+-- with :k Type in GHCi."
 
+data MyBool
+    = MyTrue -- 'MyTrue is a type-level thing with kind MyBool
+    | MyFalse -- 'MyFalse is a type-level thing with kind MyBool
+
+-- A "kind synonym":
 type Exp a
     = a -> Type
 -- :kind Exp === * -> *
 -- :kind Exp === Type -> Type
 
+-- A closed type family has all of its equations defined in one place and
+-- cannot be extended, whereas an open family can have instances spread across modules.
+-- Previously we used closed type families, Eval is an open type family.
 type family Eval (e :: Exp a) :: a
--- Therefore a is a type, of kind "Type"
--- Exp a is also a type, of kind "Type"
--- Therefore e is also a type, of kind "Type"
-
-type instance Eval (Snd '(a, b)) = b
+-- e is a type-level thing, of kind "Exp a"
+-- a is a type-level thing, of kind "Type"
 
 data Snd :: (a, b) -> Exp b
--- :k Snd???
---
+-- Snd is a type-level thing, of kind (a, b) -> Exp b
+-- Due to the kind synonym, Snd is a type-level thing, of kind (a, b) -> b -> Type
+-- This mirrors the type signature of the snd function, snd :: (a, b) -> b
+
+type instance Eval (Snd '(a, b)) = b
+-- Snd '(a, b) must have kind "Exp b",
+-- which it does because Snd :: (a, b) -> Exp b
