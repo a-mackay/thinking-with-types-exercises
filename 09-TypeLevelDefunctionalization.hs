@@ -43,3 +43,20 @@ data Snd :: (a, b) -> Exp b
 type instance Eval (Snd '(a, b)) = b
 -- Snd '(a, b) must have kind "Exp b",
 -- which it does because Snd :: (a, b) -> Exp b
+
+-- fromMaybe :: a -> Maybe a -> a
+data FromMaybe :: a -> Maybe a -> Exp a
+
+type instance Eval (FromMaybe a 'Nothing) = a
+type instance Eval (FromMaybe a ('Just b)) = b
+
+-- listToMaybe :: [a] -> Maybe a
+data ListToMaybe :: [a] -> Exp (Maybe a)
+
+type instance Eval (ListToMaybe '[]) = 'Nothing
+type instance Eval (ListToMaybe (a ': as)) = 'Just a
+
+data MapList :: (a -> Exp b) -> [a] -> Exp [b]
+
+type instance Eval (MapList f '[]) = '[]
+type instance Eval (MapList f (a ': as)) = Eval (f a) ': Eval (MapList f as)
