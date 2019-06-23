@@ -3,11 +3,13 @@
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeInType #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Main where
 
 import Data.Kind (Constraint, Type)
+import GHC.TypeLits
 
 main :: IO ()
 main = do
@@ -60,3 +62,33 @@ data MapList :: (a -> Exp b) -> [a] -> Exp [b]
 
 type instance Eval (MapList f '[]) = '[]
 type instance Eval (MapList f (a ': as)) = Eval (f a) ': Eval (MapList f as)
+
+data FoldrList :: (a -> b -> Exp b) -> b -> [a] -> Exp b
+
+type instance Eval (FoldrList f b '[]) = b
+type instance Eval (FoldrList f b (a ': as)) = Eval (FoldrList f (Eval (f a b)) as)
+
+data Sum :: Nat -> Nat -> Exp Nat
+
+type instance Eval (Sum x y) = x + y
+
+
+
+-- Ad-Hoc Polymorphism
+
+data Map :: (a -> Exp b) -> f a -> Exp (f b)
+
+-- For lists:
+type instance Eval (Map f '[]) = '[]
+type instance Eval (Map f (a ': as)) = Eval (f a) ': Eval (Map f as)
+
+-- For Maybe:
+type instance Eval (Map f ('Just a)) = 'Just (Eval (f a))
+type instance Eval (Map f 'Nothing) = 'Nothing
+
+-- For Either:
+type instance Eval (Map f ('Right b)) = 'Right (Eval (f b))
+type instance Eval (Map f ('Left a)) = 'Left a
+
+-- For tuples:
+type instance Eval (Map f '(a, b)) = '(a, Eval (f b))
